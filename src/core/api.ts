@@ -21,6 +21,18 @@ function toCamelCaseReviver(_key: string, value: unknown): unknown {
   return value;
 }
 
+/**
+ * Credential modes for unattended use (Bayside's fork). Unset: the normal username/password login
+ * and cookie. MAGNUS_API_KEY: send it as Rock's Authorization-Token header and never log in.
+ * MAGNUS_AUTH=proxy: send no credential at all, because a proxy between Magnus and Rock adds it,
+ * so the process running Magnus never holds one.
+ */
+export function credentialMode(): "login" | "apiKey" | "proxy" {
+  if (process.env.MAGNUS_AUTH === "proxy") return "proxy";
+  if (process.env.MAGNUS_API_KEY) return "apiKey";
+  return "login";
+}
+
 export class MagnusClient {
   private http: AxiosInstance;
   private cookies: Map<string, string> = new Map();
@@ -42,6 +54,14 @@ export class MagnusClient {
         return data;
       },
     });
+
+    if (credentialMode() !== "login") {
+      this.http.interceptors.request.use((config) => {
+        config.headers.delete("Cookie");
+        if (credentialMode() === "apiKey") config.headers.set("Authorization-Token", process.env.MAGNUS_API_KEY!);
+        return config;
+      });
+    }
 
     if (this.verbose) {
       this.http.interceptors.request.use((config) => {
@@ -95,6 +115,9 @@ export class MagnusClient {
   private async getCookie(serverUrl: string): Promise<string> {
     const base = normalizeServerUrl(serverUrl);
 
+    // An API key or a proxy authenticates instead; never log in or read a cached cookie.
+    if (credentialMode() !== "login") return "";
+
     // Check in-memory cache first
     if (this.cookies.has(base)) return this.cookies.get(base)!;
 
@@ -120,7 +143,8 @@ export class MagnusClient {
     } catch (error) {
       if (
         axios.isAxiosError(error) &&
-        error.response?.status === 401
+        error.response?.status === 401 &&
+        credentialMode() === "login"
       ) {
         // Clear cached cookie and re-authenticate
         clearCachedCookie(base);

@@ -1,3 +1,8 @@
+> **Bayside's fork.** Used by the [project factory](https://github.com/bayside-church/project-factory)'s
+> agents, which authenticate with a Rock REST key rather than a password: set `MAGNUS_API_KEY`, or
+> `MAGNUS_AUTH=proxy` when a proxy adds the key. See CHANGELOG.md. Upstream:
+> [bradcerb/rock-magnus-cli](https://github.com/bradcerb/rock-magnus-cli).
+
 # rock-magnus-cli
 
 CLI for interacting with [Rock RMS](https://www.rockrms.com/) via the [Magnus](https://www.triumphtech.com/magnus) API. Provides filesystem-like commands to browse, read, write, and manage files on your Rock server.
