@@ -79,6 +79,8 @@ export class MagnusClient {
 
   /** Authenticate and cache the .ROCK= cookie for a server */
   async login(serverUrl: string, username?: string, password?: string): Promise<boolean> {
+    // An API key or a proxy authenticates every request instead; there is nothing to log in to.
+    if (credentialMode() !== "login") return true;
     const base = normalizeServerUrl(serverUrl);
 
     if (!username || !password) {
