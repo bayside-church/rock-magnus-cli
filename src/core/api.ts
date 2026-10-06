@@ -42,6 +42,10 @@ export class MagnusClient {
     this.verbose = options?.verbose ?? false;
     this.http = axios.create({
       timeout: 10_000,
+      // With NODE_USE_ENV_PROXY=1, Node itself tunnels through HTTPS_PROXY with CONNECT. axios's
+      // own proxy support would instead send "GET https://..." to the proxy, which a TLS-
+      // intercepting egress proxy (the factory's iron-proxy) refuses, so it steps aside.
+      ...(process.env.NODE_USE_ENV_PROXY === "1" ? { proxy: false as const } : {}),
       headers: { "Content-Type": "application/json" },
       transformResponse: (data: unknown) => {
         if (typeof data === "string" && data !== "") {
